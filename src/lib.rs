@@ -42,7 +42,7 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
         Some(self.items.swap_remove(i).1)
     }
 
-    fn at(&self, idx: usize) -> Option<&(K,V)> {
+    fn at(&self, idx: usize) -> Option<&(K, V)> {
         self.items.get(idx)
     }
 }
@@ -172,18 +172,19 @@ impl<'a, K: Eq + Hash, V> Iterator for HashMapIterator<'a, K, V> {
             Some(bkt) => {
                 let new_pair = bkt.at(self.bucket_at);
                 match new_pair {
-                    None => { // end of bucket, switch to next
+                    None => {
+                        // end of bucket, switch to next
                         self.bucket_at = 0;
                         self.bucket_idx += 1;
                         self.next()
-                    },
-                    Some(p) => { // still some in current bucket
+                    }
+                    Some(p) => {
+                        // still some in current bucket
                         self.bucket_at += 1;
-                        Some(p)
-                            .map(|(k, v)| (k, v))
-                    },
+                        Some(p).map(|(k, v)| (k, v))
+                    }
                 }
-            },
+            }
         }
     }
 }
@@ -232,7 +233,6 @@ mod tests {
         }
         assert_eq!(nitems, 3);
     }
-
 
     #[test]
     fn iter_on_hashmap() {
