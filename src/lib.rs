@@ -5,7 +5,7 @@ use std::mem;
 
 /// Storage in a hash map
 /// All elements in a bucket are at the same hash.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Bucket<K: Eq + Hash, V> {
     items: Vec<(K, V)>,
 }
@@ -40,6 +40,10 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
     fn remove(&mut self, key: &K) -> Option<V> {
         let i = self.items.iter().position(|&(ref k, _)| k == key)?;
         Some(self.items.swap_remove(i).1)
+    }
+
+    fn at(&self, idx: usize) -> Option<&(K,V)> {
+        self.items.get(idx)
     }
 }
 
@@ -141,19 +145,15 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 pub struct HashMapIterator<'a, K: Eq + Hash, V> {
     hmap: &'a HashMap<K, V>,
     bucket_idx: usize,
-    bucket_iter: Option<std::slice::Iter<'a, (K, V)>>,
+    bucket_at: usize,
 }
 
 impl<'a, K: Eq + Hash, V> HashMapIterator<'a, K, V> {
     pub fn new(hm: &'a HashMap<K, V>) -> Self {
-        let iter = match hm.num_items {
-            0 => None,
-            _ => Some(hm.buckets[0].into_iter()),
-        };
         HashMapIterator {
             hmap: hm,
             bucket_idx: 0,
-            bucket_iter: iter,
+            bucket_at: 0,
         }
     }
 }
@@ -161,23 +161,30 @@ impl<'a, K: Eq + Hash, V> HashMapIterator<'a, K, V> {
 impl<'a, K: Eq + Hash, V> Iterator for HashMapIterator<'a, K, V> {
     type Item = (&'a K, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
-        if self.hmap.num_items == 0 || self.bucket_iter.is_none() {
+        // println!("current state: num items {:?}, is_none {:?}", self.hmap.num_items, self.bucket_iter.is_none());
+        // println!("bucket_idx: {:?}", self.bucket_idx);
+        // empty hashmap
+        if self.hmap.num_items == 0 {
             return None;
         }
-        let next_on_bucket = self.bucket_iter.as_mut().unwrap().next();
-        if next_on_bucket.is_some() {
-            return next_on_bucket.map(|(k, v)| (k, v));
+        match self.hmap.buckets.get(self.bucket_idx) {
+            None => None, // no more bucket
+            Some(bkt) => {
+                let new_pair = bkt.at(self.bucket_at);
+                match new_pair {
+                    None => { // end of bucket, switch to next
+                        self.bucket_at = 0;
+                        self.bucket_idx += 1;
+                        self.next()
+                    },
+                    Some(p) => { // still some in current bucket
+                        self.bucket_at += 1;
+                        Some(p)
+                            .map(|(k, v)| (k, v))
+                    },
+                }
+            },
         }
-        if self.bucket_idx == self.hmap.buckets.len() - 1 {
-            return None;
-        } // else switch bucket
-        self.bucket_idx += 1;
-        self.bucket_iter = Some(self.hmap.buckets[self.bucket_idx].into_iter());
-        self.bucket_iter
-            .as_mut()
-            .unwrap()
-            .next()
-            .map(|(k, v)| (k, v))
     }
 }
 
@@ -215,10 +222,15 @@ mod tests {
     fn iter_on_bucket() {
         let mut bkt: Bucket<u64, String> = Bucket::new();
         assert!(bkt.insert(3, "hi".to_string()).is_none());
+        assert!(bkt.insert(2, "hi".to_string()).is_none());
+        assert!(bkt.insert(1, "hi".to_string()).is_none());
+        let mut nitems = 0;
         for (k, v) in bkt.into_iter() {
-            assert_eq!(k, &3);
+            nitems += 1;
+            assert!(k <= &3);
             assert_eq!(v, &"hi".to_string());
         }
+        assert_eq!(nitems, 3);
     }
 
 
@@ -226,9 +238,15 @@ mod tests {
     fn iter_on_hashmap() {
         let mut m: HashMap<u64, String> = HashMap::new();
         assert_eq!(m.insert(3, "hi".to_string()), None);
+        assert_eq!(m.insert(4, "hi".to_string()), None);
+        assert_eq!(m.insert(5, "hi".to_string()), None);
+        assert_eq!(m.insert(0, "hi".to_string()), None);
+        let mut items = 0;
         for (k, v) in m.into_iter() {
-            assert_eq!(k, &3);
+            items += 1;
+            assert!(k <= &5);
             assert_eq!(v, &"hi".to_string());
         }
+        assert_eq!(items, 4);
     }
 }
