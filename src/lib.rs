@@ -29,10 +29,7 @@ impl<K: Eq + Hash, V> Default for HashMap<K, V> {
 
 impl<K: Hash + Eq, V> HashMap<K, V> {
     pub fn new() -> Self {
-        HashMap {
-            buckets: Vec::new(),
-            num_items: 0,
-        }
+        Self::default()
     }
 
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
@@ -142,27 +139,25 @@ impl<'a, K: Eq + Hash, V> HashMapIterator<'a, K, V> {
 impl<'a, K: Eq + Hash, V> Iterator for HashMapIterator<'a, K, V> {
     type Item = (&'a K, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
-        // println!("current state: num items {:?}, is_none {:?}", self.hmap.num_items, self.bucket_iter.is_none());
-        // println!("bucket_idx: {:?}", self.bucket_idx);
-        // empty hashmap
         if self.hmap.num_items == 0 {
             return None;
         }
-        match self.hmap.buckets.get(self.bucket_idx) {
-            None => None, // no more bucket
-            Some(bkt) => {
-                let new_pair = bkt.at(self.bucket_at);
-                match new_pair {
-                    None => {
-                        // end of bucket, switch to next
-                        self.bucket_at = 0;
-                        self.bucket_idx += 1;
-                        self.next()
-                    }
-                    Some(p) => {
-                        // still some in current bucket
-                        self.bucket_at += 1;
-                        Some(p).map(|(k, v)| (k, v))
+        loop {
+            match self.hmap.buckets.get(self.bucket_idx) {
+                None => break None, // no more bucket
+                Some(bkt) => {
+                    let new_pair = bkt.at(self.bucket_at);
+                    match new_pair {
+                        None => {
+                            // end of bucket, switch to next
+                            self.bucket_at = 0;
+                            self.bucket_idx += 1;
+                        }
+                        Some(p) => {
+                            // still some in current bucket
+                            self.bucket_at += 1;
+                            break Some(p).map(|(k, v)| (k, v));
+                        }
                     }
                 }
             }
