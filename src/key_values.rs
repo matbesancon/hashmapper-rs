@@ -53,7 +53,7 @@ pub struct ValuesMut<'a, K: Eq + Hash, V> {
 
 impl<'a, K: Eq + Hash, V> ValuesMut<'a, K, V> {
     pub fn new(map: &'a mut HashMap<K, V>) -> Self {
-        ValuesMut{
+        ValuesMut {
             hmap: map,
             bucket_idx: 0,
             bucket_at: 0,

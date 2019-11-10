@@ -1,13 +1,13 @@
+use std::borrow::Borrow;
 use std::cmp::Eq;
-use std::hash::Hash;
 use std::collections::hash_map::DefaultHasher;
+use std::hash::Hash;
 use std::hash::Hasher;
 use std::mem;
-use std::borrow::Borrow;
 
+mod bucket;
 mod indexing;
 mod key_values;
-mod bucket;
 
 use bucket::*;
 use key_values::*;
@@ -36,8 +36,9 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
-        where K: Borrow<Q>,
-        Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
@@ -46,8 +47,9 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
-        where K: Borrow<Q>,
-        Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
@@ -69,8 +71,9 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
-        where K: Borrow<Q>,
-        Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);

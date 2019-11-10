@@ -31,8 +31,10 @@ fn std_example() {
     // When collections store owned values (String), they can still be
     // queried using references (&str).
     if !book_reviews.contains_key("Les Misérables") {
-        println!("We've got {} reviews, but Les Misérables ain't one.",
-                book_reviews.len());
+        println!(
+            "We've got {} reviews, but Les Misérables ain't one.",
+            book_reviews.len()
+        );
     }
 
     // oops, this review has a lot of spelling mistakes, let's delete it.
@@ -43,7 +45,7 @@ fn std_example() {
     for &book in &to_find {
         match book_reviews.get(book) {
             Some(review) => println!("{}: {}", book, review),
-            None => println!("{} is unreviewed.", book)
+            None => println!("{} is unreviewed.", book),
         }
     }
 

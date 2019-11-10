@@ -1,6 +1,6 @@
+use std::borrow::Borrow;
 use std::cmp::Eq;
 use std::hash::Hash;
-use std::borrow::Borrow;
 
 use std::mem;
 
@@ -23,9 +23,9 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
     }
 
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
-        where
+    where
         K: Borrow<Q>,
-        Q: Eq + Hash
+        Q: Eq + Hash,
     {
         for (k, v) in self.items.iter() {
             if k.borrow() == key {
@@ -37,7 +37,7 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
     pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
     where
         K: Borrow<Q>,
-        Q: Eq + Hash
+        Q: Eq + Hash,
     {
         self.items.iter().any(|&(ref k, _)| k.borrow() == key)
     }
@@ -53,10 +53,14 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
     }
 
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
-    where K: Borrow<Q>,
-    Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
-        let i = self.items.iter().position(|&(ref k, _)| k.borrow() == key)?;
+        let i = self
+            .items
+            .iter()
+            .position(|&(ref k, _)| k.borrow() == key)?;
         Some(self.items.swap_remove(i).1)
     }
 
