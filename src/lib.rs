@@ -1,59 +1,16 @@
 use std::cmp::Eq;
+use std::hash::Hash;
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hasher;
 use std::mem;
+use std::borrow::Borrow;
 
-/// Storage in a hash map
-/// All elements in a bucket are at the same hash.
-#[derive(Clone, Debug)]
-struct Bucket<K: Eq + Hash, V> {
-    items: Vec<(K, V)>,
-}
+mod indexing;
+mod key_values;
+mod bucket;
 
-impl<K: Eq + Hash, V> Bucket<K, V> {
-    fn new() -> Bucket<K, V> {
-        Bucket { items: Vec::new() }
-    }
-
-    fn get(&self, key: K) -> Option<&V> {
-        for (k, v) in self.items.iter() {
-            if k == &key {
-                return Some(v);
-            }
-        }
-        None
-    }
-    fn contains_key(&self, key: K) -> bool {
-        self.items.iter().any(|&(ref k, _)| k == &key)
-    }
-
-    fn insert(&mut self, key: K, value: V) -> Option<V> {
-        for &mut (ref ekey, ref mut evalue) in self.items.iter_mut() {
-            if ekey == &key {
-                return Some(mem::replace(evalue, value));
-            }
-        }
-        self.items.push((key, value));
-        None
-    }
-
-    fn remove(&mut self, key: &K) -> Option<V> {
-        let i = self.items.iter().position(|&(ref k, _)| k == key)?;
-        Some(self.items.swap_remove(i).1)
-    }
-
-    fn at(&self, idx: usize) -> Option<&(K, V)> {
-        self.items.get(idx)
-    }
-}
-
-impl<'a, K: Eq + Hash, V> IntoIterator for &'a Bucket<K, V> {
-    type Item = &'a (K, V);
-    type IntoIter = std::slice::Iter<'a, (K, V)>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.items.iter()
-    }
-}
+use bucket::*;
+use key_values::*;
 
 /// Associative data structure
 pub struct HashMap<K: Eq + Hash, V> {
@@ -78,14 +35,20 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         }
     }
 
-    pub fn get(&self, key: K) -> Option<&V> {
+    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
+        where K: Borrow<Q>,
+        Q: Eq + Hash
+    {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
-        self.buckets[idx].get(key)
+        self.buckets[idx].get(key.borrow())
     }
 
-    pub fn contains_key(&self, key: K) -> bool {
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+        where K: Borrow<Q>,
+        Q: Eq + Hash
+    {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
@@ -105,7 +68,10 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         bucket.insert(key, value)
     }
 
-    pub fn remove(&mut self, key: &K) -> Option<V> {
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where K: Borrow<Q>,
+        Q: Eq + Hash
+    {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
@@ -139,6 +105,18 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             new_buckets[idx].insert(key, value);
         }
         mem::replace(&mut self.buckets, new_buckets);
+    }
+
+    pub fn keys(&self) -> Keys<K, V> {
+        Keys::new(self)
+    }
+
+    pub fn values(&self) -> Values<K, V> {
+        Values::new(self)
+    }
+
+    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+        ValuesMut::new(self)
     }
 }
 
@@ -214,7 +192,7 @@ mod tests {
     fn insert_get_remove() {
         let mut m: HashMap<u64, String> = HashMap::new();
         assert!(m.insert(3, "hi".to_string()).is_none());
-        assert_eq!(m.get(3), Some(&"hi".to_string()));
+        assert_eq!(m.get(&3), Some(&"hi".to_string()));
         assert_eq!(m.remove(&3), Some("hi".to_string()));
         assert_eq!(m.len(), 0)
     }
