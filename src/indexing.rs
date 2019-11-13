@@ -11,3 +11,10 @@ impl<'a, K: Eq + Hash + Borrow<Q>, V, Q: Eq + Hash + ?Sized> Index<&'a Q> for Ha
         self.get(index).unwrap()
     }
 }
+
+#[test]
+fn index_in_map() {
+    let mut hm = HashMap::new();
+    hm.insert(3, 2);
+    assert_eq!(hm[&3], 2);
+}

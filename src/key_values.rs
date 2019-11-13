@@ -67,7 +67,7 @@ impl<'a, K: Eq + Hash, V> Iterator for ValuesMut<'a, K, V> {
         if self.hmap.num_items == 0 {
             return None;
         }
-        
+
         // match self.hmap.buckets.get_mut(self.bucket_idx) {
         //     None => None, // no more bucket
         //     Some(bkt) => {

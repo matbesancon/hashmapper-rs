@@ -3,6 +3,7 @@ use std::cmp::Eq;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::iter::FromIterator;
 use std::mem;
 
 mod bucket;
@@ -208,6 +209,16 @@ impl<'a, K: Eq + Hash, V> IntoIterator for &'a HashMap<K, V> {
     }
 }
 
+impl<K: Eq + Hash, V> FromIterator<(K, V)> for HashMap<K, V> {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
+        let mut hm = HashMap::new();
+        for (k, v) in iter {
+            hm.insert(k, v);
+        }
+        hm
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Bucket;
@@ -259,5 +270,19 @@ mod tests {
             assert_eq!(v, &"hi".to_string());
         }
         assert_eq!(items, 4);
+    }
+
+    #[test]
+    fn collect_to_hashmap() {
+        let timber_resources: HashMap<&str, i32> =
+            [("Norway", 100), ("Denmark", 50), ("Iceland", 10)]
+                .iter()
+                .cloned()
+                .collect();
+        for (k, v) in timber_resources.into_iter() {
+            assert!(v >= &10);
+            assert!(v <= &100);
+        }
+        assert_eq!(timber_resources.num_items, 3)
     }
 }

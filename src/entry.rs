@@ -19,9 +19,14 @@ impl<'a, K: Eq + Hash, V> Entry<'a, K, V> {
     }
     pub fn or_insert(self, val: V) -> &'a mut V {
         match self {
-            Entry::Vacant(ventry) => {
-                ventry.map.insert_mut(ventry.key, val)
-            }
+            Entry::Vacant(ventry) => ventry.map.insert_mut(ventry.key, val),
+            Entry::Occupied(oentry) => oentry.value,
+        }
+    }
+
+    pub fn or_insert_with<F: FnOnce() -> V>(self, f: F) -> &'a mut V {
+        match self {
+            Entry::Vacant(ventry) => ventry.map.insert_mut(ventry.key, f()),
             Entry::Occupied(oentry) => oentry.value,
         }
     }
@@ -46,8 +51,8 @@ pub struct OccupiedEntry<'a, K, V> {
 #[cfg(test)]
 mod tests {
     use crate::Bucket;
-    use crate::HashMap;
     use crate::Entry;
+    use crate::HashMap;
 
     #[test]
     fn entry_api() {
@@ -68,5 +73,7 @@ mod tests {
         // should not replace since entry occupied
         e1.or_insert("hi0".to_string());
         assert_eq!(m[&3], "hi".to_string());
+        m.entry(2).or_insert_with(|| "hi".to_string());
+        assert_eq!(m[&2], "hi".to_string());
     }
 }
