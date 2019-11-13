@@ -1,5 +1,4 @@
 extern crate hashmapper;
-use std::ops::Index;
 
 use hashmapper::*;
 

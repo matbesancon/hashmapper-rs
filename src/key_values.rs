@@ -64,9 +64,10 @@ impl<'a, K: Eq + Hash, V> ValuesMut<'a, K, V> {
 impl<'a, K: Eq + Hash, V> Iterator for ValuesMut<'a, K, V> {
     type Item = &'a mut V;
     fn next(&mut self) -> Option<Self::Item> {
-        // if self.hmap.num_items == 0 {
-        //     return None;
-        // }
+        if self.hmap.num_items == 0 {
+            return None;
+        }
+        
         // match self.hmap.buckets.get_mut(self.bucket_idx) {
         //     None => None, // no more bucket
         //     Some(bkt) => {
