@@ -34,6 +34,20 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
         }
         None
     }
+
+    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        for &mut (ref k, ref mut v) in self.items.iter_mut() {
+            if k.borrow() == key {
+                return Some(v);
+            }
+        }
+        None
+    }
+
     pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
     where
         K: Borrow<Q>,
@@ -50,6 +64,16 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
         }
         self.items.push((key, value));
         None
+    }
+
+    pub fn insert_mut(&mut self, key: K, value: V) -> &mut V {
+        if self.contains_key(key.borrow()) {
+            *self.get_mut(&key).unwrap() = value;
+            self.get_mut(&key).unwrap()
+        } else {
+            self.items.push((key, value));
+            &mut self.items.last_mut().unwrap().1
+        }
     }
 
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>

@@ -90,21 +90,3 @@ impl<'a, K: Eq + Hash, V> Iterator for ValuesMut<'a, K, V> {
         None
     }
 }
-
-#[derive(Debug)]
-pub enum Entry<K: Eq + Hash, V> {
-    Vacant(VacantEntry<K, V>),
-    Occupied(OccupiedEntry<K, V>),
-}
-
-#[derive(Debug)]
-pub struct VacantEntry<K, V> {
-    key: K,
-    value: V,
-}
-
-#[derive(Debug)]
-pub struct OccupiedEntry<K, V> {
-    key: K,
-    value: V,
-}

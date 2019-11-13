@@ -6,10 +6,12 @@ use std::hash::Hasher;
 use std::mem;
 
 mod bucket;
+mod entry;
 mod indexing;
 mod key_values;
 
 use bucket::*;
+use entry::*;
 use key_values::*;
 
 /// Associative data structure
@@ -43,7 +45,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         self.buckets[idx].get(key.borrow())
     }
 
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
         Q: Eq + Hash,
@@ -51,7 +53,31 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
+        self.buckets[idx].get_mut(key.borrow())
+    }
+
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        if self.num_items == 0 {
+            return false;
+        }
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
         self.buckets[idx].contains_key(key)
+    }
+
+    fn get_bucket_mut(&mut self, key: &K) -> &mut Bucket<K, V> {
+        if self.buckets.is_empty() {
+            self.resize();
+        }
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
+        &mut self.buckets[idx]
     }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
@@ -59,12 +85,17 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         if l == 0 || self.num_items > 3 * l {
             self.resize();
         }
-        let mut hasher = DefaultHasher::new();
-        key.hash(&mut hasher);
-        let idx = (hasher.finish() % self.buckets.len() as u64) as usize;
-        let bucket = &mut self.buckets[idx];
         self.num_items += 1;
-        bucket.insert(key, value)
+        self.get_bucket_mut(&key).insert(key, value)
+    }
+
+    pub fn insert_mut(&mut self, key: K, value: V) -> &mut V {
+        let l = self.buckets.len();
+        if l == 0 || self.num_items > 3 * l {
+            self.resize();
+        }
+        self.num_items += 1;
+        self.get_bucket_mut(&key).insert_mut(key, value)
     }
 
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
@@ -117,6 +148,10 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 
     pub fn values_mut(&mut self) -> ValuesMut<K, V> {
         ValuesMut::new(self)
+    }
+
+    pub fn entry<'a>(&'a mut self, key: K) -> Entry<'_, K, V> {
+        Entry::new(self, key)
     }
 }
 
