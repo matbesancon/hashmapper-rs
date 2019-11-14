@@ -57,29 +57,31 @@ fn std_example() {
     }
 }
 
-// #[test]
-// fn entry_api() {
-//     // type inference lets us omit an explicit type signature (which
-//     // would be `HashMap<&str, u8>` in this example).
-//     let mut player_stats = HashMap::new();
+#[test]
+fn entry_api() {
+    // type inference lets us omit an explicit type signature (which
+    // would be `HashMap<&str, u8>` in this example).
+    let mut player_stats = HashMap::new();
 
-//     fn random_stat_buff() -> u8 {
-//         // could actually return some random value here - let's just return
-//         // some fixed value for now
-//         42
-//     }
+    fn random_stat_buff() -> u8 {
+        // could actually return some random value here - let's just return
+        // some fixed value for now
+        42
+    }
 
-//     // insert a key only if it doesn't already exist
-//     player_stats.entry("health").or_insert(100);
+    // insert a key only if it doesn't already exist
+    player_stats.entry("health").or_insert(100);
 
-//     // insert a key using a function that provides a new value only if it
-//     // doesn't already exist
-//     player_stats.entry("defence").or_insert_with(random_stat_buff);
+    // insert a key using a function that provides a new value only if it
+    // doesn't already exist
+    player_stats
+        .entry("defence")
+        .or_insert_with(random_stat_buff);
 
-//     // update a key, guarding against the key possibly not being set
-//     let stat = player_stats.entry("attack").or_insert(100);
-//     *stat += random_stat_buff();
-// }
+    // update a key, guarding against the key possibly not being set
+    let stat = player_stats.entry("attack").or_insert(100);
+    *stat += random_stat_buff();
+}
 
 #[test]
 fn custom_keys() {
@@ -125,22 +127,4 @@ fn key_value_iterators() {
     for k in map.keys() {
         assert!(&1 <= k && k <= &5);
     }
-}
-
-#[test]
-fn values_mut() {
-    let mut map = HashMap::new();
-
-    map.insert("a", 1);
-    map.insert("b", 2);
-    map.insert("c", 3);
-
-    for val in map.values_mut() {
-        *val = *val + 10;
-    }
-
-    // for val in map.values() {
-    //     println!("VALUE {:?}", val);
-    //     assert!(val >= &10);
-    // }
 }

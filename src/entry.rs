@@ -30,6 +30,26 @@ impl<'a, K: Eq + Hash, V> Entry<'a, K, V> {
             Entry::Occupied(oentry) => oentry.value,
         }
     }
+
+    pub fn key(&self) -> &K {
+        match self {
+            Entry::Vacant(ventry) => &ventry.key,
+            Entry::Occupied(oentry) => &oentry.key,
+        }
+    }
+
+    pub fn and_modify<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut V),
+    {
+        match self {
+            Entry::Vacant(ventry) => Entry::Vacant(ventry),
+            Entry::Occupied(oentry) => {
+                f(oentry.value);
+                Entry::Occupied(oentry)
+            }
+        }
+    }
 }
 
 pub struct VacantEntry<'a, K: Eq + Hash, V> {
@@ -75,5 +95,19 @@ mod tests {
         assert_eq!(m[&3], "hi".to_string());
         m.entry(2).or_insert_with(|| "hi".to_string());
         assert_eq!(m[&2], "hi".to_string());
+    }
+
+    #[test]
+    fn key_and_modify() {
+        let mut map_key: HashMap<&str, u32> = HashMap::new();
+        assert_eq!(map_key.entry("poneyland").key(), &"poneyland");
+
+        let mut map: HashMap<&str, u32> = HashMap::new();
+
+        map.entry("poneyland").and_modify(|e| *e += 1).or_insert(42);
+        assert_eq!(map["poneyland"], 42);
+
+        map.entry("poneyland").and_modify(|e| *e += 1).or_insert(42);
+        assert_eq!(map["poneyland"], 43);
     }
 }

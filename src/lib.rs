@@ -147,10 +147,6 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         Values::new(self)
     }
 
-    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
-        ValuesMut::new(self)
-    }
-
     pub fn entry(&'_ mut self, key: K) -> Entry<'_, K, V> {
         Entry::new(self, key)
     }
