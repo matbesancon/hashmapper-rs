@@ -67,27 +67,25 @@ impl<'a, K: Eq + Hash, V> Iterator for ValuesMut<'a, K, V> {
         if self.hmap.num_items == 0 {
             return None;
         }
-
-        // match self.hmap.buckets.get_mut(self.bucket_idx) {
-        //     None => None, // no more bucket
-        //     Some(bkt) => {
-        //         let new_pair: Option<&mut (K,V)> = bkt.at_mut(self.bucket_at);
-        //         match new_pair {
-        //             None => {
-        //                 // end of bucket, switch to next
-        //                 self.bucket_at = 0;
-        //                 self.bucket_idx += 1;
-        //                 self.next()
-        //             }
-        //             Some(p) => {
-        //                 // still some in current bucket
-        //                 self.bucket_at += 1;
-        //                 let (_, ref mut v) = p;
-        //                 Some(v)
-        //             }
-        //         }
-        //     }
-        // }
-        None
+        loop {
+            match self.hmap.buckets.get_mut(self.bucket_idx) {
+                None => break None, // no more bucket
+                Some(bkt) => {
+                    let new_pair = bkt.at_mut(self.bucket_at);
+                    match new_pair {
+                        None => {
+                            // end of bucket, switch to next
+                            self.bucket_at = 0;
+                            self.bucket_idx += 1;
+                        }
+                        Some(p) => {
+                            // still some in current bucket
+                            self.bucket_at += 1;
+                            break Some(p).map(|(k, v)| v);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

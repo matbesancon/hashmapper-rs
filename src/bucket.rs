@@ -95,6 +95,7 @@ impl<K: Eq + Hash, V> Bucket<K, V> {
     pub fn at_mut(&mut self, idx: usize) -> Option<&mut (K, V)> {
         self.items.get_mut(idx)
     }
+
 }
 
 impl<'a, K: Eq + Hash, V> IntoIterator for &'a Bucket<K, V> {
